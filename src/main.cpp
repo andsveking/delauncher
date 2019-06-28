@@ -48,7 +48,9 @@ static bool LoadFile(const char* path, char** data, size_t& data_size)
 
 int main(void)
 {
-    // load
+    const char* window_title = "Unknown";
+
+    // load ini data
     char* data = NULL;
     size_t data_size = 0;
     if (!LoadFile(DELAUNCHER_INI_FILENAME, &data, data_size)) {
@@ -56,11 +58,33 @@ int main(void)
         return 1;
     }
 
+    // parse ini data
     ini_t* ini = ini_load(data, NULL);
     free(data);
 
-    printf("sections: %d\n", ini_section_count( ini ));
-    ini_destroy(ini);
+    int c = ini_section_count( ini );
+    for (int i = 0; i < c; ++i)
+    {
+        const char* section_name = ini_section_name(ini, i);
+        printf("section: %s\n", section_name);
+
+        // global section
+        if (i == INI_GLOBAL_SECTION)
+        {
+            printf("found global section\n");
+            int prop_index = ini_find_property(ini, INI_GLOBAL_SECTION, "window_title", 0);
+            printf("window_title prop_index: %d\n", prop_index);
+            if (prop_index != INI_NOT_FOUND) {
+                window_title = ini_property_value(ini, INI_GLOBAL_SECTION, prop_index);
+                printf("window_title: %s\n", window_title);
+            }
+        } else {
+            // nop
+        }
+    }
+    // printf("sections: %d\n", );
+
+    // cleanup
 
     uiInitOptions o;
     memset(&o, 0, sizeof (uiInitOptions));
@@ -71,10 +95,12 @@ int main(void)
         return 1;
     }
 
-    uiWindow *w = uiNewWindow("Date / Time", 320, 240, 0);
+    uiWindow *w = uiNewWindow(window_title, 320, 240, 0);
     uiWindowSetMargined(w, 1);
     uiWindowOnClosing(w, OnClose, NULL);
     uiControlShow(uiControl(w));
     uiMain();
+
+    ini_destroy(ini);
     return 0;
 }
