@@ -1,0 +1,7 @@
+[submodule "third-party/inih"]
+	path = third-party/inih
+	url = git@github.com:benhoyt/inih.git
+
+[submodule "third-party/libui"]
+	path = third-party/libui
+	url = git@github.com:andlabs/libui.git
