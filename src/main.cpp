@@ -1,127 +1,79 @@
 #include <stdio.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 #include <ui.h>
 
-uiDateTimePicker *dtboth, *dtdate, *dttime;
+#define INI_IMPLEMENTATION
+#include <ini.h>
 
-const char *timeFormat(uiDateTimePicker *d)
-{
-    const char *fmt;
+#define DELAUNCHER_INI_FILENAME "delauncher.ini"
 
-    if (d == dtboth)
-        fmt = "%c";
-    else if (d == dtdate)
-        fmt = "%x";
-    else if (d == dttime)
-        fmt = "%X";
-    else
-        fmt = "";
-    return fmt;
-}
-
-void onChanged(uiDateTimePicker *d, void *data)
-{
-    struct tm time;
-    char buf[64];
-
-    uiDateTimePickerTime(d, &time);
-    strftime(buf, sizeof (buf), timeFormat(d), &time);
-    uiLabelSetText(uiLabel(data), buf);
-}
-
-void onClicked(uiButton *b, void *data)
-{
-    intptr_t now;
-    time_t t;
-    struct tm tmbuf;
-
-    now = (intptr_t) data;
-    t = 0;
-    if (now)
-        t = time(NULL);
-    tmbuf = *localtime(&t);
-
-    if (now) {
-        uiDateTimePickerSetTime(dtdate, &tmbuf);
-        uiDateTimePickerSetTime(dttime, &tmbuf);
-    } else
-        uiDateTimePickerSetTime(dtboth, &tmbuf);
-}
-
-int onClosing(uiWindow *w, void *data)
+static int OnClose(uiWindow *w, void *data)
 {
     uiQuit();
     return 1;
 }
 
+static bool LoadFile(const char* path, char** data, size_t& data_size)
+{
+    FILE* fp = fopen(path, "r");
+    if (!fp) {
+        printf("Could not open %s: %s\n", path, strerror(errno));
+        return false;
+    }
+
+    // get file size
+    fseek(fp, 0, SEEK_END);
+    data_size = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+
+    if (data_size == -1L) {
+        fclose(fp);
+        printf("Could not get size of %s: %s\n", path, strerror(errno));
+        return false;
+    }
+
+    // allocate enough for nullterm
+    data_size+=1;
+    *data = (char*)malloc(data_size);
+
+    // read file data and make sure we have a nullterm
+    fread(*data, 1, data_size - 1, fp);
+    (*data)[data_size - 1] = '\0';
+    fclose(fp);
+
+    return true;
+}
+
 int main(void)
 {
-    uiInitOptions o;
-    const char *err;
-    uiWindow *w;
-    uiGrid *g;
-    uiLabel *l;
-    uiButton *b;
+    // load
+    char* data = NULL;
+    size_t data_size = 0;
+    if (!LoadFile(DELAUNCHER_INI_FILENAME, &data, data_size)) {
+        printf("Could not load %s file.\n", DELAUNCHER_INI_FILENAME);
+        return 1;
+    }
 
+    ini_t* ini = ini_load(data, NULL);
+    free(data);
+
+    printf("sections: %d\n", ini_section_count( ini ));
+    ini_destroy(ini);
+
+    uiInitOptions o;
     memset(&o, 0, sizeof (uiInitOptions));
-    err = uiInit(&o);
+    const char *err = uiInit(&o);
     if (err != NULL) {
         fprintf(stderr, "error initializing ui: %s\n", err);
         uiFreeInitError(err);
         return 1;
     }
 
-    w = uiNewWindow("Date / Time", 320, 240, 0);
+    uiWindow *w = uiNewWindow("Date / Time", 320, 240, 0);
     uiWindowSetMargined(w, 1);
-
-    g = uiNewGrid();
-    uiGridSetPadded(g, 1);
-    uiWindowSetChild(w, uiControl(g));
-
-    dtboth = uiNewDateTimePicker();
-    dtdate = uiNewDatePicker();
-    dttime = uiNewTimePicker();
-
-    uiGridAppend(g, uiControl(dtboth),
-        0, 0, 2, 1,
-        1, uiAlignFill, 0, uiAlignFill);
-    uiGridAppend(g, uiControl(dtdate),
-        0, 1, 1, 1,
-        1, uiAlignFill, 0, uiAlignFill);
-    uiGridAppend(g, uiControl(dttime),
-        1, 1, 1, 1,
-        1, uiAlignFill, 0, uiAlignFill);
-
-    l = uiNewLabel("");
-    uiGridAppend(g, uiControl(l),
-        0, 2, 2, 1,
-        1, uiAlignCenter, 0, uiAlignFill);
-    uiDateTimePickerOnChanged(dtboth, onChanged, l);
-    l = uiNewLabel("");
-    uiGridAppend(g, uiControl(l),
-        0, 3, 1, 1,
-        1, uiAlignCenter, 0, uiAlignFill);
-    uiDateTimePickerOnChanged(dtdate, onChanged, l);
-    l = uiNewLabel("");
-    uiGridAppend(g, uiControl(l),
-        1, 3, 1, 1,
-        1, uiAlignCenter, 0, uiAlignFill);
-    uiDateTimePickerOnChanged(dttime, onChanged, l);
-
-    b = uiNewButton("Now");
-    uiButtonOnClicked(b, onClicked, (void *) 1);
-    uiGridAppend(g, uiControl(b),
-        0, 4, 1, 1,
-        1, uiAlignFill, 1, uiAlignEnd);
-    b = uiNewButton("Unix epoch");
-    uiButtonOnClicked(b, onClicked, (void *) 0);
-    uiGridAppend(g, uiControl(b),
-        1, 4, 1, 1,
-        1, uiAlignFill, 1, uiAlignEnd);
-
-    uiWindowOnClosing(w, onClosing, NULL);
+    uiWindowOnClosing(w, OnClose, NULL);
     uiControlShow(uiControl(w));
     uiMain();
     return 0;

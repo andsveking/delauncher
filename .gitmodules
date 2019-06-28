@@ -1,3 +1,6 @@
 [submodule "third-party/libui"]
 	path = third-party/libui
 	url = git@github.com:andlabs/libui.git
+[submodule "third-party/mattiasgustavsson-libs"]
+	path = third-party/mattiasgustavsson-libs
+	url = git@github.com:mattiasgustavsson/libs.git

@@ -12,11 +12,11 @@ solution "delauncher"
       language "C++"
       files { "src/*.cpp" }
 
-      includedirs { "third-party/inih/",
+      includedirs { "third-party/mattiasgustavsson-libs/",
                     "third-party/libui/"
                   }
 
-      links { "ui", "inih" }
+      links { "ui" }
 
       if os.get() == "windows" then
         links { "opengl32",
@@ -42,7 +42,6 @@ solution "delauncher"
          kind "WindowedApp"
          defines { "NDEBUG" }
          flags { "Optimize", "StaticRuntime" }
-   --]]
 
    -- libui
    project "ui"
@@ -123,21 +122,6 @@ solution "delauncher"
       else
         -- files { "libs/Boxer/src/boxer_linux.c" }
       end
-
-      configuration "Debug"
-         defines { "DEBUG" }
-         flags { "Symbols", "StaticRuntime" }
-
-      configuration "Release"
-         defines { "NDEBUG" }
-         flags { "Optimize", "StaticRuntime" }
-
-   -- inih - ini loader
-   project "inih"
-      targetname ("inih_internal")
-      kind "StaticLib"
-      language "C"
-      files { "third-party/inih/ini.c" }
 
       configuration "Debug"
          defines { "DEBUG" }
