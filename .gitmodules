@@ -4,3 +4,9 @@
 [submodule "third-party/mattiasgustavsson-libs"]
 	path = third-party/mattiasgustavsson-libs
 	url = git@github.com:mattiasgustavsson/libs.git
+[submodule "third-party/xxHash"]
+	path = third-party/xxHash
+	url = git@github.com:Cyan4973/xxHash.git
+[submodule "third-party/xxhashct"]
+	path = third-party/xxhashct
+	url = git@github.com:ekpyron/xxhashct.git

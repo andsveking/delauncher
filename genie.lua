@@ -13,6 +13,8 @@ solution "delauncher"
       files { "src/*.cpp" }
 
       includedirs { "third-party/mattiasgustavsson-libs/",
+                    "third-party/xxHash/",
+                    "third-party/xxhashct/",
                     "third-party/libui/"
                   }
 
@@ -41,6 +43,7 @@ solution "delauncher"
       configuration "Release"
          kind "WindowedApp"
          defines { "NDEBUG" }
+         buildoptions { "-Os" }
          flags { "Optimize", "StaticRuntime" }
 
    -- libui
